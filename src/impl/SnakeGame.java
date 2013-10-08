@@ -1,6 +1,7 @@
 package impl;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.HeadlessException;
 import java.awt.Image;
@@ -13,6 +14,8 @@ import controls.Keyboard;
 public class SnakeGame extends JFrame implements Runnable {
 
 	private static final long serialVersionUID = 1L;
+
+	// Graphical elements
 	private Image dbImage;
 	private Graphics dbg;
 
@@ -22,9 +25,13 @@ public class SnakeGame extends JFrame implements Runnable {
 
 	int snakePixelWidth = 10;
 
+	// Game State elements
 	Snake snake = new Snake();
-
 	boolean gameSurface[][];
+	boolean isThereACollision = false;
+	// Once the collision is detected we want to run once more to paint the GAME
+	// OVER, then terminate
+	boolean isOneAdditionalPaintRequired = false;
 
 	public SnakeGame() throws HeadlessException {
 		super();
@@ -45,15 +52,20 @@ public class SnakeGame extends JFrame implements Runnable {
 	@Override
 	public void run() {
 		// TODO work in end of game/start conditional
-		snake.initializeSnake(1, 0);
+		snake.initializeSnake(10, 0);
 		while (true) {
 			try {
 				this.repaint();
 				if (Math.random() > .7) {
 					snake.increaseSnakeSize();
-					System.out.println("Increasing snake size");
+					// System.out.println("Increasing snake size");
 				}
-				updateGameState();
+				if (isThereACollision == false) {
+					updateGameState();
+				} else if (isOneAdditionalPaintRequired == false) {
+					break;
+				}
+
 				Thread.sleep(20);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
@@ -69,8 +81,15 @@ public class SnakeGame extends JFrame implements Runnable {
 		dbImage = createImage(getWidth(), getHeight());
 		dbg = dbImage.getGraphics();
 
-		drawSnake();
-
+		if (isOneAdditionalPaintRequired) {
+			// Font f = new Font(null, Font.BOLD | Font.ITALIC, 40);
+			// dbg.setFont(f);
+			dbg.drawString("GAME OVER! The snake was " + snake.length
+					+ " feet long!", screenHeight / 2, screenWidth / 3);
+			isOneAdditionalPaintRequired = false;
+		} else {
+			drawSnake();
+		}
 		g.drawImage(dbImage, 0, 0, null);
 
 	}
@@ -101,20 +120,19 @@ public class SnakeGame extends JFrame implements Runnable {
 	}
 
 	private void updateGameState() {
-		Location noLongerSnake = snake.move();
+		Location locationThatWasTheTail = snake.move();
 
-		updateGameSurface(noLongerSnake);
+		updateGameSurface(locationThatWasTheTail);
 
 		// printGameSurface();
 
-		checkForCollisions();
-
-		System.out.println("Head now at " + snake.head.currLocation.toString()
-				+ " Tail at ");
-		if (noLongerSnake != null) {
-			System.out.println("(" + noLongerSnake.x + "," + noLongerSnake.y
-					+ ")");
-		}
+		// System.out.println("Head now at " +
+		// snake.head.currLocation.toString()
+		// + " Tail at ");
+		// if (locationThatWasTheTail != null) {
+		// System.out.println("(" + locationThatWasTheTail.x + ","
+		// + locationThatWasTheTail.y + ")");
+		// }
 
 	}
 
@@ -138,12 +156,14 @@ public class SnakeGame extends JFrame implements Runnable {
 		int x = snake.head.currLocation.x;
 		int y = snake.head.currLocation.y;
 
-		gameSurface[x][y] = true;
-
-	}
-
-	// TODO
-	private void checkForCollisions() {
+		if (x >= 0 && x < screenWidth && y >= 0 && y < screenHeight) {
+			if (gameSurface[x][y] == false) {// Empty space
+				gameSurface[x][y] = true;
+				return;
+			}
+		}
+		// Collision with maze or snake body(Indicated by gameSurface Array), or went off screen (Index outside Array size)
+		isOneAdditionalPaintRequired = isThereACollision = true;
 
 	}
 
@@ -172,13 +192,12 @@ public class SnakeGame extends JFrame implements Runnable {
 	// private int translateYCoord(int y) {
 	// return screenHeight - y;
 	// }
-	
+
 	public static void main(String[] args) {
 
 		Thread t = new Thread(new SnakeGame());
 		t.start();
 
-		
 	}
 
 }

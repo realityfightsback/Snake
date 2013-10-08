@@ -8,20 +8,17 @@ public class Snake {
 
 	Boolean popTail = true;
 	Head head;
-	// TODO probably need some kind of body segments to give, or a stack
-	// Tail tail;
-
-	// Push and pop LIFO style from this to remove old tail segments and retain
-	// the snake body
-	ArrayDeque<Location> tailStack = new ArrayDeque<Location>();
+	// Head location is put on the end of the stack. The stack is popped to
+	// remove the oldest former Head location. If we want to grow the snake
+	// we do not pop on an iteration of the game loop.
+	ArrayDeque<Location> tailStack;
 
 	int length = 0;
 
 	public void initializeSnake(int hX, int hY) {
 
 		head = new Head(hX, hY, Direction.DOWN);
-
-		// tail = new Tail(tX, tY, Direction.DOWN);
+		tailStack = new ArrayDeque<Location>();
 	}
 
 	/**
@@ -33,7 +30,7 @@ public class Snake {
 	public Location move() {
 		head.updatePartLocation();
 		tailStack.addLast(head.prevLocation);
-		// tail.updatePartLocation();
+
 		if (popTail)
 			return tailStack.pop();
 		else {
@@ -53,6 +50,7 @@ public class Snake {
 	 */
 	public void increaseSnakeSize() {
 		popTail = false;
+		length++;
 	}
 
 }
